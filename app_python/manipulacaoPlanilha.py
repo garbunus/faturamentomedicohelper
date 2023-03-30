@@ -36,8 +36,8 @@ def gerar_planilhas(dadosPagamento):
     arquivos_names = []
     # capturando nomes dos médicos
     medicos = pd.unique(dadosPagamento['Medico'])
-    # colunas que serao usadas para pagamento
-    colunas_pagamento = dadosPagamento[['Medico', 'Centro', 'Estudo', 'tipo_atendimento','Mes de Atendimento', 'Valor']]
+    # colunas que serao usadas para pagamento e sinalizadas como produção
+    colunas_pagamento = dadosPagamento[['Medico', 'Centro', 'Estudo', 'tipo_atendimento','Mes de Atendimento', 'PID', 'Visita_decricao', 'Valor']]
     # loop para filtro de dados
     for medico in medicos:
         df_pagamento = colunas_pagamento['Medico'] == medico

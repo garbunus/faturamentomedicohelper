@@ -33,7 +33,7 @@ function manipulacao(dados_1, dados_2)
 	
 	print("Total de pagamentos ainda não realizados" * count(eachrow(naoPagos)))
 	
-	planilha_de_pagamento = naoPagos[!, [:Centro, :Medico, :CPF, :Periodo, :CNPJ, :Estudo, :tipo_atendimento, :Valor]]
+	planilha_de_pagamento = naoPagos[!, [:Centro, :Medico, :CPF, :Periodo, :CNPJ, :Estudo, :tipo_atendimento, :PID, :Visita_decricao, :Valor]]
 	rename!(Planilha_de_pagamento, :tipo_atendimento => :Procedimento)
 	planilha_de_pagamento
 	#captura de dados únicos pendentes de pagamento
