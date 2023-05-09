@@ -34,56 +34,87 @@ def gerar_planilhas(dadosPagamento):
     # inicializando array de planilhas
     planilhas = []
     arquivos_names = []
+    valores_texto_email = []
     # capturando nomes dos médicos
     medicos = pd.unique(dadosPagamento['Medico'])
     # colunas que serao usadas para pagamento e sinalizadas como produção
-    colunas_pagamento = dadosPagamento[['Medico', 'Centro', 'Estudo', 'tipo_atendimento','Mes de Atendimento', 'PID', 'Visita_decricao', 'Valor']]
+    colunas_pagamento = dadosPagamento[['Medico', 'Centro', 'Estudo', 'tipo_atendimento','Mes de Atendimento', 'PID', 'Visita_descricao', 'Valor']]
     # loop para filtro de dados
     for medico in medicos:
         df_pagamento = colunas_pagamento['Medico'] == medico
         filtrado = colunas_pagamento[df_pagamento]
         agrupado = filtrado.groupby(['Medico', 'Centro', 'Estudo', 'Mes de Atendimento', 'tipo_atendimento', 'Valor']).agg(
-                                                                                                                        contagem=pd.NamedAgg(column="tipo_atendimento", aggfunc="count"),
-                                                                                                                        total=pd.NamedAgg(column="Valor", aggfunc="sum"))
+                                                                                                                        Quantidade=pd.NamedAgg(column="tipo_atendimento", aggfunc="count"),
+                                                                                                                        Total=pd.NamedAgg(column="Valor", aggfunc="sum"))
            
         nome_arquivo = 'Honorario_medico_' + medico + '_' + str(hoje) + '.xlsx'
         arquivos_names.append(nome_arquivo)
         
-        # workbook = xlsxwriter.Workbook(nome_arquivo)
-        # worksheet_pagar = workbook.add_worksheet('Pagar')
-
-        # for i in range(0,agrupado.shape[0]):
-        #    worksheet_pagar.write('A'+str(i), str(agrupado.iloc[i:1]))
-        # workbook.close()
-
+   
         # inicializando buffer
         buffer = io.BytesIO()
         # salvando dados em planilhas
         with pd.ExcelWriter(buffer) as writer:  
             agrupado.to_excel(writer, sheet_name='Pagar')
             filtrado.to_excel(writer, sheet_name='O que está sendo pago')
+
+            # Get the workbook and worksheet objects
+            workbook = writer.book
+            worksheet_1 = writer.sheets['Pagar']
+            worksheet_2 = writer.sheets['O que está sendo pago']
+
+            # Set the column widths
+            worksheet_1.set_column('A:A', 50)
+            worksheet_1.set_column('B:B', 15)
+            worksheet_1.set_column('C:D', 20)
+            worksheet_1.set_column('E:E', 50)
+            worksheet_1.set_column('F:F', 8)
+            worksheet_1.set_column('G:G', 20)
+            worksheet_1.set_column('H:H', 10)
+
+             # Set the column widths
+            worksheet_2.set_column('A:A', 50)
+            worksheet_2.set_column('B:B', 15)
+            worksheet_2.set_column('C:D', 20)
+            worksheet_2.set_column('E:E', 35)
+            worksheet_2.set_column('F:F', 8)
+            worksheet_2.set_column('G:G', 20)
+            worksheet_2.set_column('H:H', 50)
+
+            # Write the sum of the 'Valor' column to the bottom of the column
+            worksheet_1.write(len(df_pagamento)+1, 6, 'Total a pagar:')
+            worksheet_1.write(len(df_pagamento)+1, 7, agrupado['Total'].sum())
+            
+        valores_texto_email.append([medico, agrupado['Total'].sum()])
+        print(valores_texto_email)
+         
+
         # adicionando a planilha no array
         planilhas.append(buffer.getvalue())
         buffer.close()
     
-    return planilhas, arquivos_names, medicos
+    return planilhas, arquivos_names, valores_texto_email
 
-def gerar_texto_email(nomes):
-    buffer = io.BytesIO()
-    txt = open(buffer, 'w')
-    txt.writer("Olá, seguem os pagamentos médicos para esses mês.\n Os pagamentos são referentes ao médicos:\n")
-    for nome in nomes:
-        txt.writer(nome)
-    txt.writer("Favor confirmar o recebimento deste e-mail.")
-    txt.close()
-    return buffer.get_value()
-    
+def gerar_texto_email(dados_texto):
+    buffer = io.StringIO()
+      # Write text to the buffer
+    buffer.write('Olá, seguem os pagamentos médicos para esse mês.\nOs pagamentos são referentes a atendimento em ensaios clínicos para os médicos:\n\n')
+    for info in dados_texto:
+        buffer.write(f'Medico: {info[0]}. Valor a ser pago: R${info[1]}\n')
+    buffer.write("\nFavor confirmar o recebimento deste e-mail.")
+
+    return buffer.getvalue()
+
+  
 
     
     
 dados = receber_planilha()
-planilhas, nomes, medicos = gerar_planilhas(dados)
-zipfile = gerar_zipfile(planilhas, nomes)
+arquivos, nomes, valor_texto = gerar_planilhas(dados)
+arquivos.append(gerar_texto_email(valor_texto))
+nomes.append('Texto_para_email.txt')
+
+zipfile = gerar_zipfile(arquivos, nomes)
 
 tempfile = "planilas_pagamento_medico_do_mes.zip"
 
