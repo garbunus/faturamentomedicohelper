@@ -1,3 +1,10 @@
+
+
+def concatenar(dados):
+    strings_conc = ", ".join(dados)
+    return strings_conc
+
+
 # carregando pacotinhos
 import pandas as pd
 import datetime as dt
@@ -38,14 +45,16 @@ def gerar_planilhas(dadosPagamento):
     # capturando nomes dos médicos
     medicos = pd.unique(dadosPagamento['Medico'])
     # colunas que serao usadas para pagamento e sinalizadas como produção
-    colunas_pagamento = dadosPagamento[['Medico', 'Centro', 'Estudo', 'tipo_atendimento','Mes de Atendimento', 'PID', 'Visita_descricao', 'Valor']]
+    colunas_pagamento = dadosPagamento[['Medico', 'Centro', 'Estudo', 'Tipo_atendimento', 'Mes de Atendimento', 'PID', 'Visita_descricao', 'Valor']]
     # loop para filtro de dados
     for medico in medicos:
         df_pagamento = colunas_pagamento['Medico'] == medico
         filtrado = colunas_pagamento[df_pagamento]
-        agrupado = filtrado.groupby(['Medico', 'Centro', 'Estudo', 'Mes de Atendimento', 'tipo_atendimento', 'Valor']).agg(
-                                                                                                                        Quantidade=pd.NamedAgg(column="tipo_atendimento", aggfunc="count"),
-                                                                                                                        Total=pd.NamedAgg(column="Valor", aggfunc="sum"))
+        agrupado = filtrado.groupby(['Medico', 'Centro', 'Estudo', 'Mes de Atendimento', 'Tipo_atendimento', 'Valor']).agg(
+                                                                                                                        Quantidade=pd.NamedAgg(column="Tipo_atendimento", aggfunc="count"),
+                                                                                                                        Total=pd.NamedAgg(column="Valor", aggfunc="sum"),
+                                                                                                                        Visitas=pd.NamedAgg(column="Visita_descricao", aggfunc=concatenar),
+                                                                                                                        Participantes=pd.NamedAgg(column="PID", aggfunc=concatenar))
            
         nome_arquivo = 'Honorario_medico_' + medico + '_' + str(hoje) + '.xlsx'
         arquivos_names.append(nome_arquivo)
@@ -93,6 +102,9 @@ def gerar_planilhas(dadosPagamento):
         planilhas.append(buffer.getvalue())
         buffer.close()
     
+
+
+
     return planilhas, arquivos_names, valores_texto_email
 
 def gerar_texto_email(dados_texto):
@@ -122,3 +134,5 @@ with open(tempfile, 'wb') as f:
     f.write(zipfile)
 
         
+
+
